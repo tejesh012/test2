@@ -44,11 +44,6 @@ def create_app(config_name='default'):
             "supports_credentials": True
         }
     })
-            "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-            "allow_headers": ["Content-Type", "Authorization"],
-            "supports_credentials": True
-        }
-    })
 
     # Register blueprints
     from app.routes.auth import auth_bp
