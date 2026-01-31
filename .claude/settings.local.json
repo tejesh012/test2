@@ -1,0 +1,42 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx create-next-app@latest:*)",
+      "Bash(cd:*)",
+      "Bash(npm run build:*)",
+      "Bash(curl:*)",
+      "Bash(pip install:*)",
+      "Bash(service postgresql status:*)",
+      "Bash(sudo -u postgres psql:*)",
+      "Bash(psql:*)",
+      "Bash(PGPASSWORD=postgres psql:*)",
+      "Bash(python3:*)",
+      "Bash(source:*)",
+      "Bash(python:*)",
+      "Bash(npm install)",
+      "Bash(npm run dev)",
+      "Bash(./convert_to_tfjs.sh)",
+      "Bash(/tasks)",
+      "Bash(lsof:*)",
+      "Bash(pkill:*)",
+      "Bash(fuser:*)",
+      "Bash(/home/bunny/majorproj/venv/bin/python:*)",
+      "Bash(./venv/bin/python:*)",
+      "Bash(cat:*)",
+      "Bash(npm show @mediapipe/face_mesh version)",
+      "Bash(git init)",
+      "Bash(git remote add:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nPrepare for deployment\n\n- Add backend/Procfile for Render deployment\n- Update backend config for database URL compatibility\n- Update backend CORS settings for Vercel frontend\n- Add DEPLOYMENT.md guide\n\nCo-Authored-By: Claude \\(gemini-3-pro-high[1m]\\) <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git branch:*)",
+      "Bash(git push:*)",
+      "Bash(git commit:*)",
+      "Bash(git rev-list:*)",
+      "Bash(git cat-file:*)",
+      "Bash(git update-ref:*)",
+      "Bash(git rm:*)",
+      "Bash(git clean:*)",
+      "Bash(git reset:*)"
+    ]
+  }
+}
