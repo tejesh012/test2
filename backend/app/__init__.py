@@ -23,15 +23,29 @@ def create_app(config_name='default'):
     jwt.init_app(app)
     bcrypt.init_app(app)
 
-    # Configure CORS
+    # Configure CORS - Allow specific origins + any Vercel preview URLs
     frontend_url = os.getenv('FRONTEND_URL')
-    origins = ["http://localhost:3000", "http://127.0.0.1:3000"]
+
+    # Base allowed origins
+    allowed_origins = ["http://localhost:3000", "http://127.0.0.1:3000"]
     if frontend_url:
-        origins.append(frontend_url)
+        allowed_origins.append(frontend_url)
+
+    # Function to dynamically check origin
+    def cors_origin_check(origin):
+        if not origin:
+            return False
+        # Allow configured origins
+        if origin in allowed_origins:
+            return True
+        # Allow all Vercel deployments for this project (flexible for previews)
+        if origin.endswith('.vercel.app'):
+            return True
+        return False
 
     CORS(app, resources={
         r"/api/*": {
-            "origins": origins,
+            "origins": cors_origin_check,
             "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
             "allow_headers": ["Content-Type", "Authorization"],
             "supports_credentials": True
