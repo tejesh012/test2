@@ -30,7 +30,8 @@ def create_app(config_name='default'):
     allowed_origins = [
         "http://localhost:3000",
         "http://127.0.0.1:3000",
-        r"^https://.*\.vercel\.app$"  # Regex to match any vercel.app subdomain
+        "https://ai-demo-frontend-4lz9699ll-tejsehs-projects.vercel.app",  # Your specific deployment URL
+        r"^https://.*\.vercel\.app$"  # Regex for others
     ]
 
     if frontend_url:
