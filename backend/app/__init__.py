@@ -62,4 +62,8 @@ def create_app(config_name='default'):
     def health_check():
         return {'status': 'healthy', 'message': 'AI Demo API is running'}
 
+    # Create tables if they don't exist (Fix for Render free tier where shell is unavailable)
+    with app.app_context():
+        db.create_all()
+
     return app
