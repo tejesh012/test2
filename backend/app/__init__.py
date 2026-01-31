@@ -27,25 +27,23 @@ def create_app(config_name='default'):
     frontend_url = os.getenv('FRONTEND_URL')
 
     # Base allowed origins
-    allowed_origins = ["http://localhost:3000", "http://127.0.0.1:3000"]
+    allowed_origins = [
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        r"^https://.*\.vercel\.app$"  # Regex to match any vercel.app subdomain
+    ]
+
     if frontend_url:
         allowed_origins.append(frontend_url)
 
-    # Function to dynamically check origin
-    def cors_origin_check(origin):
-        if not origin:
-            return False
-        # Allow configured origins
-        if origin in allowed_origins:
-            return True
-        # Allow all Vercel deployments for this project (flexible for previews)
-        if origin.endswith('.vercel.app'):
-            return True
-        return False
-
     CORS(app, resources={
         r"/api/*": {
-            "origins": cors_origin_check,
+            "origins": allowed_origins,
+            "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+            "allow_headers": ["Content-Type", "Authorization"],
+            "supports_credentials": True
+        }
+    })
             "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
             "allow_headers": ["Content-Type", "Authorization"],
             "supports_credentials": True
