@@ -9,12 +9,14 @@ class Config:
     JWT_ACCESS_TOKEN_EXPIRES = 3600  # 1 hour
     JWT_REFRESH_TOKEN_EXPIRES = 2592000  # 30 days
 
-    # PostgreSQL Database (using psycopg3)
+    # PostgreSQL Database
+    # Render provides 'postgres://' or 'postgresql://' but SQLAlchemy + psycopg3 requires 'postgresql+psycopg://'
     database_url = os.getenv('DATABASE_URL', 'postgresql+psycopg://postgres:postgres@localhost:5432/ai_demo_db')
-    # Fix for Render/Railway providing postgres:// which SQLAlchemy might not like with certain drivers
-    # or if we strictly want to enforce the driver.
+
     if database_url and database_url.startswith("postgres://"):
         database_url = database_url.replace("postgres://", "postgresql+psycopg://", 1)
+    elif database_url and database_url.startswith("postgresql://"):
+        database_url = database_url.replace("postgresql://", "postgresql+psycopg://", 1)
 
     SQLALCHEMY_DATABASE_URI = database_url
     SQLALCHEMY_TRACK_MODIFICATIONS = False
