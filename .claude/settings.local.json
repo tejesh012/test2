@@ -36,7 +36,9 @@
       "Bash(git update-ref:*)",
       "Bash(git rm:*)",
       "Bash(git clean:*)",
-      "Bash(git reset:*)"
+      "Bash(git reset:*)",
+      "Bash(git fetch:*)",
+      "Bash(git ls-tree:*)"
     ]
   }
 }

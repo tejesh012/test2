@@ -1,8 +1,15 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity, verify_jwt_in_request
 import re
+import os
+from mistralai import Mistral
 
 chat_bp = Blueprint('chat', __name__)
+
+# Initialize Mistral Client
+api_key = os.environ.get("MISTRAL_API_KEY")
+mistral_client = Mistral(api_key=api_key) if api_key else None
+MISTRAL_MODEL = "mistral-small-latest"
 
 # Knowledge base for Sentio
 KNOWLEDGE_BASE = {
@@ -157,7 +164,7 @@ EMOTION_RESPONSES = {
 }
 
 def find_best_response(message: str, emotion: str = "neutral") -> str:
-    """Find the best response based on message content and emotion."""
+    """Find the best response based on message content and emotion (Fallback Legacy System)."""
     message_lower = message.lower().strip()
 
     # Check knowledge base first
@@ -214,6 +221,76 @@ Just ask me anything specific!"""
     return random.choice(emotion_responses) + "\n\nTry asking about: login, camera, emotions, or dashboard features."
 
 
+def get_mistral_response(message: str, emotion: str, history: list = None) -> str:
+    """Get response from Mistral AI with emotion context."""
+    if not mistral_client:
+        raise Exception("Mistral API key not configured")
+
+    system_prompt = f"""You are Sentio, an emotional AI companion integrated into a web application.
+Your goal is to be helpful, empathetic, and concise.
+The user is currently feeling: {emotion.upper()}.
+Adjust your tone to match or support their emotion.
+- If they are HAPPY: Be enthusiastic and celebratory.
+- If they are SAD: Be comforting, gentle, and supportive.
+- If they are ANGRY: Be calm, patient, and de-escalating.
+- If they are SURPRISED: Be engaging and explanatory.
+- If they are NEUTRAL: Be professional, friendly, and helpful.
+
+Context about the app you are in:
+- Name: Sentio
+- Features: Real-time face detection, emotion analysis, secure dashboard.
+- Tech Stack: Next.js, Flask, PostgreSQL, MediaPipe.
+- Privacy: All video processing is local/real-time, no video is stored.
+
+IMPORTANT: You must also analyze the user's message to update their emotional state if their text indicates a change (e.g., "I am sad", "I feel great").
+At the very beginning of your response, output the detected emotion in brackets, like [EMOTION:HAPPY] or [EMOTION:SAD].
+Valid emotions: happy, sad, angry, surprised, neutral, fear, disgust.
+If the text doesn't strongly indicate a new emotion, output the current emotion: [EMOTION:{emotion.upper()}].
+Then provide your response.
+
+Example Response:
+[EMOTION:SAD]
+I'm so sorry to hear that you're feeling down. I'm here for you.
+"""
+
+    messages = [{"role": "system", "content": system_prompt}]
+
+    if history:
+        # Convert frontend history format to Mistral format if needed
+        # Assuming frontend sends [{role: 'user'|'assistant', content: '...'}]
+        # Filter out system messages if any, limit history length to avoid token limits
+        recent_history = history[-10:] # Keep last 10 messages context
+        for msg in recent_history:
+            if msg.get('role') in ['user', 'assistant'] and msg.get('content'):
+                messages.append({"role": msg['role'], "content": msg['content']})
+
+    # Add current message
+    messages.append({"role": "user", "content": message})
+
+    try:
+        chat_response = mistral_client.chat.complete(
+            model=MISTRAL_MODEL,
+            messages=messages,
+        )
+        content = chat_response.choices[0].message.content
+
+        # Extract emotion tag
+        detected_emotion = emotion
+        clean_response = content
+
+        import re
+        match = re.search(r'\[EMOTION:(\w+)\]', content, re.IGNORECASE)
+        if match:
+            detected_emotion = match.group(1).lower()
+            # Remove the tag from the displayed response
+            clean_response = content.replace(match.group(0), '').strip()
+
+        return clean_response, detected_emotion
+    except Exception as e:
+        print(f"Mistral API Error: {e}")
+        raise e
+
+
 @chat_bp.route('/message', methods=['POST'])
 def send_message():
     """Process a chat message and return AI response."""
@@ -221,18 +298,30 @@ def send_message():
         data = request.get_json()
         message = data.get('message', '').strip()
         emotion = data.get('emotion', 'neutral')
+        history = data.get('history', [])
 
         if not message:
             return jsonify({'error': 'Message is required'}), 400
 
-        # Generate response
-        response = find_best_response(message, emotion)
-
-        return jsonify({
-            'success': True,
-            'response': response,
-            'emotion_detected': emotion
-        })
+        # Try Mistral AI first
+        try:
+            response_text, new_emotion = get_mistral_response(message, emotion, history)
+            return jsonify({
+                'success': True,
+                'response': response_text,
+                'emotion_detected': new_emotion,
+                'source': 'mistral'
+            })
+        except Exception as e:
+            # Fallback to legacy keyword system
+            print(f"Fallback to legacy chat: {str(e)}")
+            response = find_best_response(message, emotion)
+            return jsonify({
+                'success': True,
+                'response': response,
+                'emotion_detected': emotion,
+                'source': 'legacy_fallback'
+            })
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500

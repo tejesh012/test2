@@ -29,6 +29,7 @@ interface Message {
 
 interface ChatPanelProps {
   currentEmotion?: string;
+  onEmotionChange?: (emotion: string) => void;
   className?: string;
 }
 
@@ -47,7 +48,7 @@ const SUGGESTIONS = [
   "Is my data private?"
 ];
 
-export function ChatPanel({ currentEmotion = "neutral", className }: ChatPanelProps) {
+export function ChatPanel({ currentEmotion = "neutral", onEmotionChange, className }: ChatPanelProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [isTyping, setIsTyping] = useState(false);
@@ -100,14 +101,25 @@ What would you like to know?`,
     setIsTyping(true);
 
     try {
-      const { data, error } = await chatService.sendMessage(text, currentEmotion);
+      // Format history for backend (role and content only)
+      const history = messages.map(msg => ({
+        role: msg.role,
+        content: msg.content
+      }));
+
+      const { data, error } = await chatService.sendMessage(text, currentEmotion, history);
 
       if (data && data.success) {
+        // Update emotion if changed
+        if (data.emotion_detected && data.emotion_detected !== currentEmotion && onEmotionChange) {
+          onEmotionChange(data.emotion_detected);
+        }
+
         const assistantMessage: Message = {
           id: (Date.now() + 1).toString(),
           role: "assistant",
           content: data.response,
-          emotion: currentEmotion,
+          emotion: data.emotion_detected || currentEmotion,
           timestamp: new Date(),
         };
         setMessages((prev) => [...prev, assistantMessage]);

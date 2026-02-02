@@ -120,10 +120,10 @@ export const detectionService = {
 };
 
 export const chatService = {
-  async sendMessage(message: string, emotion?: string) {
+  async sendMessage(message: string, emotion?: string, history?: Array<{ role: string; content: string }>) {
     return fetchApi<ChatResponse>('/chat/message', {
       method: 'POST',
-      body: JSON.stringify({ message, emotion }),
+      body: JSON.stringify({ message, emotion, history }),
     });
   },
 

@@ -89,7 +89,7 @@ export default function HomePage() {
             transition={{ duration: 1, ease: "easeOut" }}
             className="text-center"
           >
-            <h1 className="md:text-8xl text-5xl lg:text-[12rem] font-bold text-center bg-clip-text text-transparent bg-gradient-to-b from-white via-white to-violet-400 tracking-tight">
+            <h1 className="md:text-[10rem] text-7xl lg:text-[16rem] font-bold text-center bg-clip-text text-transparent bg-gradient-to-b from-white via-white to-violet-400 tracking-tight">
               Sentio
             </h1>
 

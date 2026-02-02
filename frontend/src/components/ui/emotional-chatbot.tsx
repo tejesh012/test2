@@ -19,6 +19,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { chatService } from "@/services/api";
 
 interface Message {
   id: string;
@@ -70,61 +71,6 @@ const emotionIcons: Record<string, React.ReactNode> = {
   angry: <AlertCircle className="w-4 h-4 text-red-400" />,
 };
 
-function generateResponse(message: string, emotion?: string): string {
-  const lowerMessage = message.toLowerCase();
-
-  // Emotion-aware responses
-  if (emotion && emotion !== "neutral") {
-    const emotionRes = emotionResponses[emotion];
-    if (emotionRes && Math.random() > 0.5) {
-      return emotionRes[Math.floor(Math.random() * emotionRes.length)];
-    }
-  }
-
-  // Context-aware responses
-  if (lowerMessage.includes("hello") || lowerMessage.includes("hi") || lowerMessage.includes("hey")) {
-    return "Hello! Great to see you! I'm Sentio, your emotional AI assistant. I can detect your emotions through your camera and provide personalized support. How are you feeling today?";
-  }
-
-  if (lowerMessage.includes("how are you")) {
-    return "I'm doing great, thank you for asking! I'm always here and ready to help. More importantly, how are YOU doing? I noticed your current mood - want to talk about it?";
-  }
-
-  if (lowerMessage.includes("help")) {
-    return "I'd love to help! Here's what I can do:\n\n• Detect your emotions through facial analysis\n• Provide emotional support and conversation\n• Answer questions and offer suggestions\n• Just be here to listen\n\nWhat would you like to explore?";
-  }
-
-  if (lowerMessage.includes("sad") || lowerMessage.includes("upset") || lowerMessage.includes("depressed")) {
-    return "I'm sorry you're feeling this way. It takes courage to express these feelings. Remember, it's okay to not be okay sometimes. Would you like to talk more about what's bothering you, or would you prefer I share some uplifting thoughts?";
-  }
-
-  if (lowerMessage.includes("happy") || lowerMessage.includes("good") || lowerMessage.includes("great")) {
-    return "That's wonderful to hear! Positive emotions are precious - let's build on that energy! What's contributing to your good mood today?";
-  }
-
-  if (lowerMessage.includes("angry") || lowerMessage.includes("frustrated") || lowerMessage.includes("annoyed")) {
-    return "I understand frustration can be overwhelming. Let's work through this together. Would you like to vent, or shall we try to find a solution to what's bothering you?";
-  }
-
-  if (lowerMessage.includes("thank")) {
-    return "You're very welcome! It's my pleasure to be here for you. Is there anything else you'd like to chat about?";
-  }
-
-  if (lowerMessage.includes("bye") || lowerMessage.includes("goodbye")) {
-    return "Take care! Remember, I'm always here whenever you need to talk. Wishing you all the best! 👋";
-  }
-
-  // Default contextual responses
-  const defaultResponses = [
-    "That's interesting! Tell me more about that.",
-    "I appreciate you sharing that with me. How does that make you feel?",
-    "I'm here to listen. What else is on your mind?",
-    "Thank you for opening up. Would you like to explore this topic further?",
-    "I understand. Is there anything specific I can help you with regarding this?",
-  ];
-
-  return defaultResponses[Math.floor(Math.random() * defaultResponses.length)];
-}
 
 export function EmotionalChatbot({ currentEmotion = "neutral", className }: EmotionalChatbotProps) {
   const [isOpen, setIsOpen] = useState(false);
@@ -173,20 +119,46 @@ export function EmotionalChatbot({ currentEmotion = "neutral", className }: Emot
     setInputValue("");
     setIsTyping(true);
 
-    // Simulate AI thinking
-    await new Promise((resolve) => setTimeout(resolve, 1000 + Math.random() * 1000));
+    try {
+      // Format history for backend
+      const history = messages.map(msg => ({
+        role: msg.role,
+        content: msg.content
+      }));
 
-    const response = generateResponse(inputValue, currentEmotion);
+      const { data, error } = await chatService.sendMessage(inputValue, currentEmotion, history);
 
-    const assistantMessage: Message = {
-      id: (Date.now() + 1).toString(),
-      role: "assistant",
-      content: response,
-      emotion: currentEmotion,
-      timestamp: new Date(),
-    };
+      if (data && data.success) {
+        const assistantMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          role: "assistant",
+          content: data.response,
+          emotion: currentEmotion,
+          timestamp: new Date(),
+        };
+        setMessages((prev) => [...prev, assistantMessage]);
+      } else {
+        // Fallback error message
+        const errorMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          role: "assistant",
+          content: error || "I'm having trouble connecting to my brain right now. Please try again later.",
+          emotion: currentEmotion,
+          timestamp: new Date(),
+        };
+        setMessages((prev) => [...prev, errorMessage]);
+      }
+    } catch (err) {
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: "assistant",
+        content: "I'm having trouble connecting to the server.",
+        emotion: currentEmotion,
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, errorMessage]);
+    }
 
-    setMessages((prev) => [...prev, assistantMessage]);
     setIsTyping(false);
   };
 

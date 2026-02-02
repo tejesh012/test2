@@ -265,7 +265,11 @@ export default function DashboardPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5 }}
             >
-              <ChatPanel currentEmotion={currentEmotion} className="h-[500px]" />
+              <ChatPanel
+                currentEmotion={currentEmotion}
+                className="h-[500px]"
+                onEmotionChange={(emotion) => handleEmotionChange(emotion as EmotionLabel, 1.0)}
+              />
             </motion.div>
           </div>
 
